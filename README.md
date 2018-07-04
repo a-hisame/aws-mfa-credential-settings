@@ -1,4 +1,4 @@
-# AWS STS Credential Settings
+# AWS MFA Credential Settings
 
 When you use IAM access key tied with MFA user and managed strictly policies
 [(i.e. policy denies any AWS API call except MFA certification)](https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_users-self-manage-mfa-and-creds.html),
