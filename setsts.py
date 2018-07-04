@@ -129,11 +129,6 @@ def _parse_args(argv=sys.argv[1:]):
     return parser.parse_args(argv)
 
 
-def main():
-    ''' for setup.py entry point '''
-    pass
-
-
 if __name__ == '__main__':
     exitcode = _main(_parse_args())
     sys.exit(exitcode)
