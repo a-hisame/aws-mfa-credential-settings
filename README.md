@@ -1,6 +1,7 @@
 # AWS STS Credential Settings
 
-When you use IAM access key tied with MFA user,
+When you use IAM access key tied with MFA user and managed strictly policies
+[(i.e. policy denies any AWS API call except MFA certification)] (https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_users-self-manage-mfa-and-creds.html),
 you have to publish session token by `get-session-token` and use it.
 
 The API returns `access_key` , `secret_access_key` and `session_token`
@@ -22,10 +23,10 @@ see: https://docs.aws.amazon.com/STS/latest/APIReference/Welcome.html
 
 ## Environment
 
-I tested following Python version by virtualenv.
+I tested following Python version by virtualenv on ubuntu.
 
-* Python 2.7
-* Python 3.6
+* Python 2.7.15rc
+* Python 3.6.5
 
 ```
 pip install awscli boto3
@@ -45,7 +46,7 @@ python setsts.py \
 Program outputs like following messages (several lines are masked).
 
 ```
-$ python setsts.py --profile a-hisame --target-profile temporary --token-code XXXXXX
+$ python setsts.py --profile a-hisame --target-profile temporary --token-code XYZXYZ
 AWS STS Credential Setup
 > credential filepath: /home/ubuntu/.aws/credentials
 > serial number: arn:aws:iam::************:mfa/a-hisame
@@ -57,6 +58,17 @@ completed!
 ```
 
 After succeeded, you can use MFA certificated `temporary` profile.
+
+```
+# MFA is not certificated so failed
+$ aws s3 ls --profile a-hisame
+
+An error occurred (AccessDenied) when calling the ListBuckets operation: Access Denied
+
+# works well to use MFA certificated profile
+$ aws s3 ls --profile temporary
+2017-09-27 22:16:18 ......
+```
 
 
 ### Options and Specifications
