@@ -1,0 +1,1 @@
+# aws-credential-switcher
