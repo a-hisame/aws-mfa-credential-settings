@@ -1,7 +1,7 @@
 # AWS STS Credential Settings
 
 When you use IAM access key tied with MFA user and managed strictly policies
-[(i.e. policy denies any AWS API call except MFA certification)] (https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_users-self-manage-mfa-and-creds.html),
+[(i.e. policy denies any AWS API call except MFA certification)](https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_users-self-manage-mfa-and-creds.html),
 you have to publish session token by `get-session-token` and use it.
 
 The API returns `access_key` , `secret_access_key` and `session_token`
