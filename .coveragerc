@@ -1,0 +1,12 @@
+[run]
+branch = True
+source = tcgen
+
+[report]
+exclude_lines =
+    if __name__ == .__main__.:
+    if sys.version_info.major == 2:
+    elif sys.version_info.major == 2:
+ignore_errors = True
+omit =
+    */tests/*
