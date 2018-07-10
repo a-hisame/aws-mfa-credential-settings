@@ -5,7 +5,7 @@ python:
 install:
   - python scripts/install.py requirements-dev.txt
   - pip install codecov
-script: nosetests -v --with-coverage --cover-erase --cover-package tcgen --with-xunit
+script: nosetests -v --with-coverage --cover-erase --cover-package setsts --with-xunit
 after_success:
   - codecov
 branches:
