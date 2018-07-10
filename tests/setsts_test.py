@@ -2,19 +2,22 @@
 # -*- coding: utf-8 -*-
 
 ''' Unittest for setsts.py '''
-
+import sys
 import datetime
 
 import unittest
 
-try:
-    from unittest.mock import MagicMock
-except ImportError:
-    # Python 2
-    from mock import MagicMock
+if sys.version_info.major == 3:
+    from unittest.mock import MagicMock, patch, mock_open
+elif sys.version_info.major == 2:
+    from mock import MagicMock, patch, mock_open
+else:
+    raise RuntimeError('no supported python version')
 
+from nose.tools import eq_, ok_
+from botocore.exceptions import ClientError
 
-import setsts
+from setsts import setsts
 
 
 class TestSetSTS(unittest.TestCase):
@@ -34,6 +37,61 @@ class TestSetSTS(unittest.TestCase):
             }
         })
         return m
+
+    def test_files_got_modification(self):
+        sts = self._create_mock_sts()
+        backupcopy = MagicMock()
+        mockio = mock_open()
+        with patch('boto3.session.Session.client', return_value=sts), \
+                patch('shutil.copy', backupcopy), \
+                patch('codecs.open', mockio):
+            setsts.main([
+                '--token-code', 'XYZXYZ',
+                '--target-profile', 'tmpcode',
+            ])
+
+        # copy backup and override credential file
+        ok_(backupcopy.called)
+        fh = mockio()
+        expecteds = [
+            '[tmpcode]',
+            'aws_access_key_id = AKIAIOSFODNN7EXAMPLE',
+            'aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYzEXAMPLEKEY',
+            'aws_session_token = EXAMPLESESSION',
+            ''
+        ]
+        actuals = [args[0] for (args, kwargs) in fh.write.call_args_list]
+        for (expected, actual) in zip(expecteds, actuals):
+            ok_(expected in actual)
+
+    def test_files_with_dryrun(self):
+        sts = self._create_mock_sts()
+        backupcopy = MagicMock()
+        mockio = mock_open()
+        with patch('boto3.session.Session.client', return_value=sts), \
+                patch('shutil.copy', backupcopy), \
+                patch('codecs.open', mockio):
+            setsts.main([
+                '--aws-credential-file', 'hogehoge',
+                '--token-code', 'XYZXYZ',
+                '--target-profile', 'tmpcode',
+                '--dryrun', '--ignore-backup', '--quiet'
+            ])
+        # never copy and write
+        ok_(not backupcopy.called)
+        ok_(not mockio().write.called)
+
+    def test_if_get_credential_failed(self):
+        sts = self._create_mock_sts()
+        sts.get_session_token = MagicMock(
+            side_effect=ClientError({}, 'GetSessionToken'))
+        with patch('boto3.session.Session.client', return_value=sts), \
+                patch('shutil.copy', MagicMock()), \
+                patch('codecs.open', mock_open(read_data='')):
+            setsts.main([
+                '--token-code', 'XYZXYZ',
+                '--target-profile', 'tmpcode',
+            ])
 
     def test_serial_number(self):
         sts = self._create_mock_sts()

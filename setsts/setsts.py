@@ -8,12 +8,14 @@ import os
 import shutil
 import codecs
 import argparse
-try:
+
+if sys.version_info.major == 3:
     from configparser import ConfigParser
-except ImportError:
-    # Python 2
+elif sys.version_info.major == 2:
     from StringIO import StringIO
     from ConfigParser import ConfigParser
+else:
+    raise RuntimeError('no supported python version')
 
 import boto3
 
@@ -46,10 +48,9 @@ def _get_temporary_credentials(sts, serial_number, duration_seconds, token_code)
 
 def _create_new_credential_parser(config_contents, profile, access_key, secret_access_key, session_token):
     parser = ConfigParser()
-    try:
+    if sys.version_info.major == 3:
         parser.read_string(config_contents)
-    except AttributeError:
-        # for python 2
+    else:
         parser.readfp(StringIO(config_contents))
 
     if not parser.has_section(profile):
@@ -66,6 +67,26 @@ def _console_factory(is_quiet):
             return
         print(message)
     return _console
+
+
+def _save_credentials(configfile, parser, console,
+                      dryrun=False, ignore_backup=False):
+    def _dryrun_wrapper(msg, func):
+        if dryrun:
+            console('> dryrun: {msg}'.format(msg=msg))
+        else:
+            func()
+
+    if not ignore_backup:
+        backuppath = configfile + '~'
+        _dryrun_wrapper('create backup file',
+                        lambda: shutil.copy(configfile, backuppath))
+        console('> created backup file: ' + backuppath)
+
+    def _save():
+        with codecs.open(configfile, 'w') as fh:
+            parser.write(fh)
+    _dryrun_wrapper('override credential file', _save)
 
 
 def _main(args):
@@ -88,19 +109,17 @@ def _main(args):
         console('aborted.', force=True)
         return 1
 
-    if not args.ignore_backup:
-        backuppath = configfile + '~'
-        shutil.copy(configfile, backuppath)
-        console('> created backup file: ' + backuppath)
-
     with codecs.open(configfile, 'r') as fh:
         console('> output target profile: ' + args.target_profile)
         parser = _create_new_credential_parser(
             fh.read(), args.target_profile,
             credential['AccessKeyId'], credential['SecretAccessKey'],
             credential['SessionToken'])
-    with codecs.open(configfile, 'w') as fh:
-        parser.write(fh)
+
+    _save_credentials(
+        configfile, parser, console,
+        dryrun=args.dryrun, ignore_backup=args.ignore_backup)
+
     console('completed!')
     return 0
 
@@ -126,7 +145,13 @@ def _parse_args(argv=sys.argv[1:]):
                         help='ignore backup copy before override configuration file (name: with ~ suffix)')
     parser.add_argument('--quiet', action='store_true',
                         help='no stdout mode (but when message shown if error occurred)')
+    parser.add_argument('--dryrun', action='store_true',
+                        help='run the program without any modifications')
     return parser.parse_args(argv)
+
+
+def main(argv=sys.argv[1:]):
+    _main(_parse_args(argv))
 
 
 if __name__ == '__main__':

@@ -1,7 +1,11 @@
-# AWS MFA Credential Settings
+# AWS STS Credential Settings
+
+[![Build Status](https://travis-ci.org/a-hisame/aws-mfa-credential-settings.svg?branch=master)](https://travis-ci.org/a-hisame/aws-mfa-credential-settings)
+[![codecov](https://codecov.io/gh/a-hisame/aws-mfa-credential-settings/branch/master/graph/badge.svg)](https://codecov.io/gh/a-hisame/aws-mfa-credential-settings)
+[![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
 
 When you use IAM access key tied with MFA user and managed strictly policies
-[(i.e. policy denies any AWS API call except MFA certification)](https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_users-self-manage-mfa-and-creds.html),
+[(i.e. policy denies any AWS API call except MFA certification)] (https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_users-self-manage-mfa-and-creds.html),
 you have to publish session token by `get-session-token` and use it.
 
 The API returns `access_key` , `secret_access_key` and `session_token`
@@ -21,24 +25,24 @@ This project objective is to provide easy way to use created sts temporary crede
 see: https://docs.aws.amazon.com/STS/latest/APIReference/Welcome.html
 
 
-## Environment
+## Required Python
 
-I tested following Python version by virtualenv on ubuntu.
+tox passes tests for `py27` and `py36` at least.
 
-* Python 2.7.15rc
-* Python 3.6.5
-
-```
-pip install awscli boto3
-```
 
 ## How to Use
 
-Download `setsts.py` file and run following command as minimum usage.
+Install this project by pip from github directory.
 
 ```
-python setsts.py \
-    --profile <MFA IAM user profile> \
+pip install git+https://github.com/a-hisame/aws-mfa-credential-settings.git
+```
+
+After installed, command `setsts` is available.
+Basically usagge is following.
+
+```
+setsts --profile <MFA IAM user profile> \
     --target-profile <profile name what you want to set> \
     --token-code <current MFA token code>
 ```
@@ -46,7 +50,7 @@ python setsts.py \
 Program outputs like following messages (several lines are masked).
 
 ```
-$ python setsts.py --profile a-hisame --target-profile temporary --token-code XYZXYZ
+$ setsts --profile a-hisame --target-profile temporary --token-code XXXXXX
 AWS STS Credential Setup
 > credential filepath: /home/ubuntu/.aws/credentials
 > serial number: arn:aws:iam::************:mfa/a-hisame
@@ -76,12 +80,12 @@ $ aws s3 ls --profile temporary
 You can know detailed specifications by `--help` option.
 
 ```
-$ python setsts.py --help
-usage: setsts.py [-h] [--profile PROFILE] [--serial-number SERIAL_NUMBER]
-                 --token-code TOKEN_CODE [--duration-seconds DURATION_SECONDS]
-                 --target-profile TARGET_PROFILE
-                 [--aws-credential-file AWS_CREDENTIAL_FILE] [--ignore-backup]
-                 [--quiet]
+setsts --help
+usage: setsts [-h] [--profile PROFILE] [--serial-number SERIAL_NUMBER]
+              --token-code TOKEN_CODE [--duration-seconds DURATION_SECONDS]
+              --target-profile TARGET_PROFILE
+              [--aws-credential-file AWS_CREDENTIAL_FILE] [--ignore-backup]
+              [--quiet] [--dryrun]
 
 create AWS session token and set them into your AWS credential file
 
@@ -105,6 +109,7 @@ optional arguments:
                         (name: with ~ suffix)
   --quiet               no stdout mode (but when message shown if error
                         occurred)
+  --dryrun              run the program without any modifications
 ```
 
 
